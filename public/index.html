@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Masonry</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        #root {
+            color: rgba(0, 0, 0, 1);
+            background-color: rgba(0, 0, 0, 1);
+        }
+
+        .card-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 100vw;
+            height: 100vh;
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .card {
+            min-width: 100vw;
+            width: 100vw;
+            max-width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem 2rem 2rem;
+            position: relative;
+            background-color: #000;
+        }
+
+        .card-content {
+            width: calc(100% - 80px - 1rem);
+            max-width: 800px;
+            height: 90vh;
+            background: linear-gradient(135deg, #e8e8e8 0%, #f5f5f5 100%);
+            border-radius: 40px;
+            padding: 3rem 2rem 3rem 2rem;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            margin-right: 1rem;
+        }
+
+
+        .image-frame {
+            width: 100%;
+            background: #2c3e50;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            max-height: 55vh;
+        }
+
+        .image-frame img,
+        .image-frame video {
+            width: 100%;
+            height: auto;
+            max-height: 55vh;
+            object-fit: contain;
+            display: block;
+        }
+
+        .card-title {
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            line-height: 0.9;
+            margin-bottom: 1rem;
+            color: #000;
+            text-transform: uppercase;
+            font-style: italic;
+            overflow: hidden;
+        }
+
+        .card-numbers {
+            position: absolute;
+            font-size: 3rem;
+            font-weight: 300;
+            color: #000;
+        }
+
+        .number-top { top: 3rem; left: 2rem; }
+        .number-bottom { bottom: 3rem; right: 3rem; }
+
+        .card-description {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #000;
+            max-width: 90%;
+            text-align: justify;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            position: fixed;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 90vh;
+            width: 80px;
+            background: #d8d8d8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            z-index: 1000;
+            border-radius: 40px;
+        }
+
+        .sidebar-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: ns-resize;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .sidebar-label-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-filter-all {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 0.55rem;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.5);
+            margin-top: 0.25rem;
+        }
+
+        @keyframes sidebarTextSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sidebar-text-animated {
+            animation: sidebarTextSlideIn 0.3s ease-out;
+        }
+
+        .sidebar-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-icon {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-icon:hover {
+            transform: scale(1.1);
+        }
+
+
+        .dots-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .dot-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        .dot-indicator.active {
+            background: #0000ff;
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        .card-metadata {
+            position: absolute;
+            bottom: 2.5rem;
+            right: 3rem;
+            font-size: 0.65rem;
+            text-align: right;
+            line-height: 1.3;
+            color: #000;
+            max-width: 40%;
+        }
+
+        .card-metadata-link {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        .card-metadata-link:hover {
+            opacity: 0.8;
+        }
+
+        .admin-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(0,0,255,0.8);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .admin-btn:hover {
+            background: #0000ff;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                min-width: 100vw;
+                width: 100vw;
+                max-width: 100vw;
+                padding: 1rem calc(40px + 1rem + 0.75rem) 1rem 1rem;
+            }
+            
+            .card-content {
+                width: 100%;
+                max-width: 100%;
+                padding: 1.5rem 1rem 1.5rem 1rem;
+                height: 95vh;
+                border-radius: 30px;
+                margin-right: 0;
+            }
+            
+            .admin-btn {
+                top:0.5rem;
+                left:0.5rem;
+                padding: 0.3rem 0.7rem;
+            }
+
+
+            .image-frame {
+                max-height: 40vh;
+                min-height: 200px;
+            }
+            
+            .sidebar {
+                width: 40px;
+                height: 95vh;
+                right: 1rem;
+                border-radius: 30px;
+            }
+            
+            .sidebar-text {
+                font-size: 0.9rem;
+            }
+
+            .sidebar-filter-all {
+                font-size: 0.45rem;
+            }
+            
+            .card-numbers {
+                font-size: 2rem;
+            }
+            
+            .card-description {
+                font-size: 0.7rem;
+                line-height: 1.4;
+                max-width: 95%;
+                -webkit-line-clamp: 5;
+            }
+            
+            .card-metadata {
+                font-size: 0.5rem;
+                bottom: 4rem;
+                right: 1.5rem;
+                max-width: 50%;
+            }
+            
+            .number-top { 
+                top: 1.5rem; 
+                left: 1rem; 
+            }
+            
+            .number-bottom { 
+                bottom: 1.5rem; 
+                left: 1rem; 
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+        // Configurazione API
+        const API_URL = 'http://localhost:3000/api';
+        const LINKEDIN_PROFILE_URL = 'https://www.linkedin.com/in/tuoprofilo';
+
+        // Definizione categorie fisse (label visibile + tag nel JSON, case-insensitive match)
+        const CATEGORIES = [
+            { label: 'All', tag: null },
+            { label: 'Homepage', tag: 'homepage' },
+            { label: 'Collection', tag: 'collection page' },
+            { label: 'Drawer Cart', tag: 'drawer cart' },
+            { label: 'Prodotto', tag: 'pagina prodotto' }
+        ];
+
+        // Componente Card singola
+        function Card({ item, index, totalCards }) {
+            const titleRef = useRef(null);
+            const [fontSize, setFontSize] = useState(5);
+
+            const formatDate = (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            };
+
+            const day = formatDate(item.date).split('/')[0];
+            const positionNumber = String(index + 1).padStart(2, '0');
+
+            useEffect(() => {
+                const adjustFontSize = () => {
+                    if (!titleRef.current) return;
+                    
+                    const element = titleRef.current;
+                    const isMobile = window.innerWidth <= 768;
+                    
+                    // Font di partenza basato su viewport
+                    let currentSize = isMobile ? 2.5 : 5;
+                    const minSize = isMobile ? 1.5 : 2;
+                    
+                    element.style.fontSize = `${currentSize}rem`;
+                    
+                    // Calcola l'altezza di una singola riga
+                    const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+                    const maxHeight = lineHeight * 3; // 3 righe
+                    
+                    // Riduci il font fino a quando sta in 3 righe
+                    while (element.scrollHeight > maxHeight && currentSize > minSize) {
+                        currentSize -= 0.1;
+                        element.style.fontSize = `${currentSize}rem`;
+                    }
+                    
+                    setFontSize(currentSize);
+                };
+
+                adjustFontSize();
+                window.addEventListener('resize', adjustFontSize);
+                return () => window.removeEventListener('resize', adjustFontSize);
+            }, [item.title]);
+
+            return (
+                <div className="card">
+                    <div className="card-content">
+                        <span className="card-numbers number-top">{day}</span>
+                        <span className="card-numbers number-bottom">{positionNumber}</span>
+
+                        <div className="image-frame">
+                            {item.type === 'image' ? (
+                                <img src={`http://localhost:3000${item.url}`} alt={item.title} />
+                            ) : (
+                                <video 
+                                    src={`http://localhost:3000${item.url}`}
+                                    loop 
+                                    muted 
+                                    autoPlay
+                                    playsInline
+                                />
+                            )}
+                        </div>
+
+                        <h1 ref={titleRef} className="card-title" style={{ fontSize: `${fontSize}rem` }}>{item.title}</h1>
+                        
+                        <p className="card-description">
+                            {item.description}
+                        </p>
+
+                        <div className="card-metadata">
+                            <div>Spunto scritto da {item.author || 'Nome Autore'}</div>
+                            <div>Pubblicato: {new Date(item.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                            <div><a href={LINKEDIN_PROFILE_URL} className="card-metadata-link" target="_blank" rel="noopener noreferrer">Visita il mio Profilo Linkedin</a></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Componente per creare nuovi post
+        function CreatePostPage({ onBack, onSave }) {
+            const [formData, setFormData] = useState({
+                title: '',
+                description: '',
+                tags: '',
+                date: new Date().toISOString().split('T')[0],
+                externalLink: '',
+                file: null,
+                filePreview: null,
+                fileType: null
+            });
+            const [isUploading, setIsUploading] = useState(false);
+
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileType = file.type.startsWith('image/') ? 'image' : 'video';
+                    const filePreview = URL.createObjectURL(file);
+                    
+                    setFormData({
+                        ...formData,
+                        file: file,
+                        filePreview: filePreview,
+                        fileType: fileType
+                    });
+                }
+            };
+
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setFormData({
+                    ...formData,
+                    [name]: value
+                });
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                
+                if (!formData.file || !formData.title || !formData.description) {
+                    alert('Per favore compila tutti i campi obbligatori');
+                    return;
+                }
+
+                setIsUploading(true);
+
+                try {
+                    const tagsArray = formData.tags
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(tag => tag !== '');
+
+                    // Crea FormData per l'upload (campi testo prima del file, così il server li riceve)
+                    const uploadData = new FormData();
+                    uploadData.append('title', formData.title);
+                    uploadData.append('description', formData.description);
+                    uploadData.append('date', formData.date);
+                    uploadData.append('tags', JSON.stringify(tagsArray));
+                    uploadData.append('externalLink', (formData.externalLink || '').trim());
+                    uploadData.append('file', formData.file);
+
+                    // Invia al server (solo file + campi obbligatori nel multipart)
+                    const response = await fetch(`${API_URL}/posts`, {
+                        method: 'POST',
+                        body: uploadData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Errore nel caricamento del post');
+                    }
+
+                    let newPost = await response.json();
+
+                    // Il link esterno viene salvato con una seconda richiesta (Multer a volte non mette i campi in req.body)
+                    const externalLink = (formData.externalLink || '').trim();
+                    if (externalLink) {
+                        const updateRes = await fetch(`${API_URL}/posts/${newPost.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ externalLink })
+                        });
+                        if (updateRes.ok) {
+                            newPost = await updateRes.json();
+                        }
+                    }
+
+                    onSave(newPost);
+                } catch (error) {
+                    console.error('Errore:', error);
+                    alert('Errore nel caricare il post. Riprova.');
+                } finally {
+                    setIsUploading(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white shadow-sm sticky top-0 z-10">
+                        <div className="max-w-4xl mx-auto px-4 py-4">
+                            <button 
+                                onClick={onBack}
+                                className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                                disabled={isUploading}
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Torna alla griglia
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto px-4 py-8">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-8">Crea Nuovo Post</h1>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Upload File */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Immagine o Video *
+                                </label>
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                                    <input
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                        id="file-upload"
+                                        disabled={isUploading}
+                                    />
+                                    <label 
+                                        htmlFor="file-upload"
+                                        className={`cursor-pointer ${isUploading ? 'opacity-50' : ''}`}
+                                    >
+                                        {!formData.filePreview ? (
+                                            <div>
+                                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                <p className="mt-2 text-sm text-gray-600">
+                                                    Clicca per caricare un'immagine o un video
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    PNG, JPG, GIF, MP4, MOV (max 50MB)
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                {formData.fileType === 'image' ? (
+                                                    <img 
+                                                        src={formData.filePreview} 
+                                                        alt="Preview"
+                                                        className="max-h-64 mx-auto rounded"
+                                                    />
+                                                ) : (
+                                                    <video 
+                                                        src={formData.filePreview}
+                                                        controls
+                                                        className="max-h-64 mx-auto rounded"
+                                                    />
+                                                )}
+                                                <p className="mt-2 text-sm text-blue-600">
+                                                    Clicca per cambiare file
+                                                </p>
+                                            </div>
+                                        )}
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Titolo */}
+                            <div>
+                                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Titolo *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="title"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Inserisci il titolo del post"
+                                    required
+                                    disabled={isUploading}
+                                />
+                            </div>
+
+                            {/* Descrizione */}
+                            <div>
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Descrizione *
+                                </label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows="5"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Inserisci la descrizione del post"
+                                    required
+                                    disabled={isUploading}
+                                />
+                            </div>
+
+                            {/* Data */}
+                            <div>
+                                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Data
+                                </label>
+                                <input
+                                    type="date"
+                                    id="date"
+                                    name="date"
+                                    value={formData.date}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    disabled={isUploading}
+                                />
+                            </div>
+
+                            {/* Tags */}
+                            <div>
+                                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Tags
+                                </label>
+                                <input
+                                    type="text"
+                                    id="tags"
+                                    name="tags"
+                                    value={formData.tags}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="natura, montagna, tramonto (separati da virgola)"
+                                    disabled={isUploading}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Separa i tag con una virgola
+                                </p>
+                            </div>
+
+                            {/* Link esterno */}
+                            <div>
+                                <label htmlFor="externalLink" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Link esterno
+                                </label>
+                                <input
+                                    type="url"
+                                    id="externalLink"
+                                    name="externalLink"
+                                    value={formData.externalLink}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="https://esempio.com/pagina"
+                                    disabled={isUploading}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    URL della pagina web collegata al post (opzionale)
+                                </p>
+                            </div>
+
+                            {/* Pulsanti */}
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                    disabled={isUploading}
+                                >
+                                    {isUploading ? (
+                                        <>
+                                            <div className="loading-spinner mr-2"></div>
+                                            Caricamento...
+                                        </>
+                                    ) : (
+                                        'Pubblica Post'
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onBack}
+                                    className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:opacity-50"
+                                    disabled={isUploading}
+                                >
+                                    Annulla
+                                </button>
+                            </div>
+                        </form>
+                    </main>
+                </div>
+            );
+        }
+
+        // Componente principale con navigazione a card
+        function CardSlider({ posts, loading, onCreatePost, activeCategory, onCategoryChange, categoryCounts }) {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [touchStart, setTouchStart] = useState(0);
+            const [touchEnd, setTouchEnd] = useState(0);
+            const wheelTimeoutRef = useRef(null);
+            const sidebarWheelTimeoutRef = useRef(null);
+            const containerRef = useRef(null);
+            const sidebarRef = useRef(null);
+
+            // Reset card index quando cambiano i post (es. cambio categoria)
+            useEffect(() => {
+                setCurrentIndex(0);
+            }, [posts.length, activeCategory]);
+
+            const nextCard = () => {
+                setCurrentIndex(i => (i < posts.length - 1 ? i + 1 : i));
+            };
+
+            const prevCard = () => {
+                setCurrentIndex(i => (i > 0 ? i - 1 : i));
+            };
+
+            const handleTouchStart = (e) => {
+                setTouchStart(e.targetTouches[0].clientX);
+            };
+
+            const handleTouchMove = (e) => {
+                setTouchEnd(e.targetTouches[0].clientX);
+            };
+
+            const handleTouchEnd = () => {
+                if (touchStart - touchEnd > 75) {
+                    nextCard();
+                }
+                if (touchStart - touchEnd < -75) {
+                    prevCard();
+                }
+            };
+
+            // Scroll orizzontale sulle card (area principale)
+            useEffect(() => {
+                const el = containerRef.current;
+                if (!el || posts.length <= 1) return;
+                const onWheel = (e) => {
+                    // Ignora se lo scroll arriva dalla sidebar
+                    if (sidebarRef.current && sidebarRef.current.contains(e.target)) return;
+                    if (wheelTimeoutRef.current) return;
+                    const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+                    if (Math.abs(delta) < 15) return;
+                    wheelTimeoutRef.current = setTimeout(() => {
+                        wheelTimeoutRef.current = null;
+                    }, 400);
+                    if (delta > 0) {
+                        setCurrentIndex(i => (i < posts.length - 1 ? i + 1 : i));
+                    } else {
+                        setCurrentIndex(i => (i > 0 ? i - 1 : i));
+                    }
+                    e.preventDefault();
+                };
+                el.addEventListener('wheel', onWheel, { passive: false });
+                return () => el.removeEventListener('wheel', onWheel);
+            }, [posts.length]);
+
+            // Scroll verticale sulla sidebar → cambio categoria ciclico
+            useEffect(() => {
+                const sidebar = sidebarRef.current;
+                if (!sidebar) return;
+                const onSidebarWheel = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (sidebarWheelTimeoutRef.current) return;
+                    const delta = e.deltaY;
+                    if (Math.abs(delta) < 10) return;
+                    sidebarWheelTimeoutRef.current = setTimeout(() => {
+                        sidebarWheelTimeoutRef.current = null;
+                    }, 500);
+                    const currentIdx = CATEGORIES.findIndex(c => c.label === activeCategory);
+                    let nextIdx;
+                    if (delta > 0) {
+                        // Scroll giù → categoria successiva (ciclico)
+                        nextIdx = (currentIdx + 1) % CATEGORIES.length;
+                    } else {
+                        // Scroll su → categoria precedente (ciclico)
+                        nextIdx = (currentIdx - 1 + CATEGORIES.length) % CATEGORIES.length;
+                    }
+                    onCategoryChange(CATEGORIES[nextIdx].label);
+                };
+                sidebar.addEventListener('wheel', onSidebarWheel, { passive: false });
+                return () => sidebar.removeEventListener('wheel', onSidebarWheel);
+            }, [activeCategory, onCategoryChange]);
+
+            const handleExternalLink = () => {
+                if (posts[currentIndex]?.externalLink) {
+                    window.open(posts[currentIndex].externalLink, '_blank');
+                }
+            };
+
+            const prevCategory = () => {
+                const currentIdx = CATEGORIES.findIndex(c => c.label === activeCategory);
+                const nextIdx = (currentIdx - 1 + CATEGORIES.length) % CATEGORIES.length;
+                onCategoryChange(CATEGORIES[nextIdx].label);
+            };
+
+            const nextCategory = () => {
+                const currentIdx = CATEGORIES.findIndex(c => c.label === activeCategory);
+                const nextIdx = (currentIdx + 1) % CATEGORIES.length;
+                onCategoryChange(CATEGORIES[nextIdx].label);
+            };
+
+            if (loading) {
+                return (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                        <div className="loading-spinner"></div>
+                    </div>
+                );
+            }
+
+            if (posts.length === 0) {
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '2rem' }}>
+                        <svg style={{ width: '80px', height: '80px', marginBottom: '1rem', color: '#999' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                            {activeCategory === 'All' ? 'Nessun post disponibile' : `Nessun post in "${activeCategory}"`}
+                        </h2>
+                        <p style={{ color: '#666', marginBottom: '2rem' }}>
+                            {activeCategory === 'All' ? 'Crea il tuo primo post per iniziare' : 'Prova un\'altra categoria'}
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            {activeCategory !== 'All' && (
+                                <button 
+                                    onClick={() => onCategoryChange('All')} 
+                                    className="admin-btn" 
+                                    style={{ position: 'relative', top: 'auto', left: 'auto', background: '#333' }}
+                                >
+                                    Mostra tutti
+                                </button>
+                            )}
+                            <button onClick={onCreatePost} className="admin-btn" style={{ position: 'relative', top: 'auto', left: 'auto' }}>
+                                + Nuovo Post
+                            </button>
+                        </div>
+
+                        {/* Sidebar anche nello stato vuoto (nessun post = solo "ALL") */}
+                        <div className="sidebar" ref={sidebarRef}>
+                            <div className="sidebar-icons">
+                                <svg className="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={prevCategory}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                </svg>
+                            </div>
+                            <div className="sidebar-text sidebar-text-animated" key={activeCategory}>
+                                {activeCategory.toUpperCase()}
+                            </div>
+                            <div className="sidebar-icons">
+                                <svg className="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={nextCategory}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div 
+                    ref={containerRef}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    <button className="admin-btn" onClick={onCreatePost}>
+                        + Nuovo Post
+                    </button>
+
+                    {/* Sidebar */}
+                    <div className="sidebar" ref={sidebarRef}>
+                        <div className="sidebar-icons">
+                            <svg className="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={prevCategory}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            </svg>
+                        </div>
+                        <div className="sidebar-label-wrap">
+                            <div className="sidebar-text sidebar-text-animated" key={activeCategory === 'All' ? `all-${currentIndex}` : activeCategory}>
+                                {activeCategory === 'All'
+                                    ? (posts[currentIndex]?.tags?.[0] || 'PORTFOLIO').toUpperCase()
+                                    : activeCategory.toUpperCase()}
+                            </div>
+                            {activeCategory === 'All' && (
+                                <div className="sidebar-filter-all">ALL</div>
+                            )}
+                        </div>
+                        <div className="sidebar-icons">
+                            <svg className="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={nextCategory}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Indicatori pallini */}
+                    <div className="dots-indicator">
+                        {posts.map((_, index) => (
+                            <div 
+                                key={index}
+                                className={`dot-indicator ${index === currentIndex ? 'active' : ''}`}
+                                onClick={() => setCurrentIndex(index)}
+                                style={{ cursor: 'pointer' }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Container card con animazione */}
+                    <div 
+                        className="card-container"
+                        style={{ transform: `translateX(-${currentIndex * 100}vw)` }}
+                    >
+                        {posts.map((post, index) => (
+                            <Card key={post.id} item={post} index={index} totalCards={posts.length} />
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Fisher-Yates shuffle: ordine casuale ad ogni caricamento pagina
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Legge la categoria dalla URL (?category=Homepage)
+        function getCategoryFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const cat = params.get('category');
+            if (cat) {
+                const found = CATEGORIES.find(c => c.label.toLowerCase() === cat.toLowerCase());
+                if (found) return found.label;
+            }
+            return 'All';
+        }
+
+        // App principale
+        function App() {
+            const [currentView, setCurrentView] = useState('slider');
+            const [allPosts, setAllPosts] = useState([]);         // tutti i post (shuffled)
+            const [activeCategory, setActiveCategory] = useState(getCategoryFromURL);
+            const [loading, setLoading] = useState(true);
+
+            // Post filtrati per categoria attiva
+            const filteredPosts = useMemo(() => {
+                const catDef = CATEGORIES.find(c => c.label === activeCategory);
+                if (!catDef || catDef.tag === null) return allPosts; // "All"
+                return allPosts.filter(post =>
+                    post.tags && post.tags.some(t => t.toLowerCase() === catDef.tag.toLowerCase())
+                );
+            }, [allPosts, activeCategory]);
+
+            // Conteggio post per ogni categoria
+            const categoryCounts = useMemo(() => {
+                const counts = {};
+                CATEGORIES.forEach(cat => {
+                    if (cat.tag === null) {
+                        counts[cat.label] = allPosts.length;
+                    } else {
+                        counts[cat.label] = allPosts.filter(post =>
+                            post.tags && post.tags.some(t => t.toLowerCase() === cat.tag.toLowerCase())
+                        ).length;
+                    }
+                });
+                return counts;
+            }, [allPosts]);
+
+            // Carica i post dal server
+            useEffect(() => {
+                fetchPosts();
+            }, []);
+
+            const fetchPosts = async () => {
+                try {
+                    setLoading(true);
+                    const response = await fetch(`${API_URL}/posts`);
+                    if (!response.ok) {
+                        throw new Error('Errore nel caricamento dei post');
+                    }
+                    const data = await response.json();
+                    setAllPosts(shuffleArray(data));
+                } catch (error) {
+                    console.error('Errore nel caricamento:', error);
+                    alert('Errore nel caricamento dei post. Assicurati che il server sia avviato.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Cambia categoria e aggiorna URL
+            const handleCategoryChange = useCallback((categoryLabel) => {
+                setActiveCategory(categoryLabel);
+                const url = new URL(window.location);
+                if (categoryLabel === 'All') {
+                    url.searchParams.delete('category');
+                } else {
+                    url.searchParams.set('category', categoryLabel);
+                }
+                window.history.replaceState({}, '', url);
+            }, []);
+
+            const handleCreatePost = () => {
+                setCurrentView('create');
+            };
+
+            const handleBack = () => {
+                setCurrentView('slider');
+            };
+
+            const handleSavePost = (newPost) => {
+                setAllPosts(prev => [newPost, ...prev]);
+                setCurrentView('slider');
+            };
+
+            return (
+                <>
+                    {currentView === 'slider' && (
+                        <CardSlider 
+                            posts={filteredPosts}
+                            loading={loading}
+                            onCreatePost={handleCreatePost}
+                            activeCategory={activeCategory}
+                            onCategoryChange={handleCategoryChange}
+                            categoryCounts={categoryCounts}
+                        />
+                    )}
+                    {currentView === 'create' && (
+                        <CreatePostPage 
+                            onBack={handleBack}
+                            onSave={handleSavePost}
+                        />
+                    )}
+                </>
+            );
+        }
+
+        // Render dell'app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
