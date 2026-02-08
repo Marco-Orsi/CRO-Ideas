@@ -18,6 +18,7 @@
         body {
             overflow: hidden;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            touch-action: pan-y;
         }
 
         #root {
@@ -749,8 +750,8 @@
         // Componente principale con navigazione a card
         function CardSlider({ posts, loading, onCreatePost, activeCategory, onCategoryChange, categoryCounts }) {
             const [currentIndex, setCurrentIndex] = useState(0);
-            const [touchStart, setTouchStart] = useState(0);
-            const [touchEnd, setTouchEnd] = useState(0);
+            const touchStartRef = useRef(null);
+            const touchEndRef = useRef(null);
             const wheelTimeoutRef = useRef(null);
             const sidebarWheelTimeoutRef = useRef(null);
             const containerRef = useRef(null);
@@ -769,22 +770,58 @@
                 setCurrentIndex(i => (i > 0 ? i - 1 : i));
             };
 
-            const handleTouchStart = (e) => {
-                setTouchStart(e.targetTouches[0].clientX);
-            };
+            // Touch handling nativo sul document per evitare problemi di hit-testing su iOS
+            // con position:fixed + transform
+            useEffect(() => {
+                if (posts.length <= 1) return;
 
-            const handleTouchMove = (e) => {
-                setTouchEnd(e.targetTouches[0].clientX);
-            };
+                const onTouchStart = (e) => {
+                    if (e.target.closest('.sidebar') ||
+                        e.target.closest('.dots-indicator') ||
+                        e.target.closest('.admin-btn') ||
+                        e.target.closest('.create-post-page')) {
+                        touchStartRef.current = null;
+                        return;
+                    }
+                    touchStartRef.current = e.touches[0].clientX;
+                    touchEndRef.current = null;
+                };
 
-            const handleTouchEnd = () => {
-                if (touchStart - touchEnd > 75) {
-                    nextCard();
-                }
-                if (touchStart - touchEnd < -75) {
-                    prevCard();
-                }
-            };
+                const onTouchMove = (e) => {
+                    if (touchStartRef.current === null) return;
+                    touchEndRef.current = e.touches[0].clientX;
+                };
+
+                const onTouchEnd = () => {
+                    if (touchStartRef.current === null || touchEndRef.current === null) {
+                        touchStartRef.current = null;
+                        touchEndRef.current = null;
+                        return;
+                    }
+
+                    const swipeDistance = touchStartRef.current - touchEndRef.current;
+                    if (Math.abs(swipeDistance) > 50) {
+                        if (swipeDistance > 0) {
+                            nextCard();
+                        } else {
+                            prevCard();
+                        }
+                    }
+
+                    touchStartRef.current = null;
+                    touchEndRef.current = null;
+                };
+
+                document.addEventListener('touchstart', onTouchStart, { passive: true });
+                document.addEventListener('touchmove', onTouchMove, { passive: true });
+                document.addEventListener('touchend', onTouchEnd);
+
+                return () => {
+                    document.removeEventListener('touchstart', onTouchStart);
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                };
+            }, [posts.length]);
 
             // Scroll orizzontale sulle card (area principale)
             useEffect(() => {
@@ -912,11 +949,8 @@
             }
 
             return (
-                <div 
+                <div
                     ref={containerRef}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
                 >
                     <button className="admin-btn" onClick={onCreatePost}>
                         + Nuovo Post
@@ -959,7 +993,7 @@
                     </div>
 
                     {/* Container card con animazione */}
-                    <div 
+                    <div
                         className="card-container"
                         style={{ transform: `translateX(-${currentIndex * 100}vw)` }}
                     >
