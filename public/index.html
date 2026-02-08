@@ -360,7 +360,7 @@
         const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
         // Configurazione API
-        const API_URL = 'http://localhost:3000/api';
+        const API_URL = window.location.origin + '/api';
         const LINKEDIN_PROFILE_URL = 'https://www.linkedin.com/in/tuoprofilo';
 
         // Definizione categorie fisse (label visibile + tag nel JSON, case-insensitive match)
@@ -424,10 +424,10 @@
 
                         <div className="image-frame">
                             {item.type === 'image' ? (
-                                <img src={`http://localhost:3000${item.url}`} alt={item.title} />
+                                <img src={`${item.url}`} alt={item.title} />
                             ) : (
                                 <video 
-                                    src={`http://localhost:3000${item.url}`}
+                                    src={`${item.url}`}
                                     loop 
                                     muted 
                                     autoPlay
